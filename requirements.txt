@@ -1,19 +1,9 @@
-# Job Market Intelligence Dashboard
-# Install with: pip install -r requirements.txt
-
-# Core data
-pandas==2.2.0
-numpy==1.26.4
-scikit-learn==1.4.0
-
-# Web scraping
-requests==2.31.0
-beautifulsoup4==4.12.3
-lxml==5.1.0
-
-# Dashboard
-streamlit==1.31.0
-plotly==5.18.0
-
-# Utilities
-pathlib2==2.3.7
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+plotly
+streamlit
+requests
+beautifulsoup4
