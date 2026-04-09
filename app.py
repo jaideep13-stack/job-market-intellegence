@@ -159,13 +159,25 @@ CITIES = [
 # ── Data loaders ──────────────────────────────────────────────────────────────
 @st.cache_data(ttl=300)
 def load_data() -> pd.DataFrame:
-    """Load and preprocess jobs from SQLite."""
     if not DB_PATH.exists():
         os.makedirs("data", exist_ok=True)
-        from scraper import generate_synthetic_jobs, save_to_db
-        df_temp = generate_synthetic_jobs(1500)
-        save_to_db(df_temp)
-      
+        import random
+        from datetime import datetime, timedelta
+        records = []
+        roles = ["Data Scientist","ML Engineer","Data Analyst","Data Engineer","AI Engineer","NLP Engineer"]
+        cities = ["Bangalore","Mumbai","Delhi","Hyderabad","Pune","Chennai","Remote"]
+        companies = ["Flipkart","Razorpay","Swiggy","Zomato","CRED","Groww","TCS","Infosys"]
+        skills_pool = ["python","sql","machine learning","tensorflow","pytorch","aws","docker","nlp","pandas","spark"]
+        salary_map = {"Data Scientist":(8,25),"ML Engineer":(10,30),"Data Analyst":(4,15),"Data Engineer":(8,28),"AI Engineer":(12,35),"NLP Engineer":(10,30)}
+        for i in range(1500):
+            role = random.choice(roles)
+            city = random.choice(cities)
+            s_min,s_max = salary_map[role]
+            records.append({"job_id":f"JOB{i}","title":role,"company":random.choice(companies),"city":city,"experience":random.choice(["0-1 years","1-3 years","3-5 years","5-8 years"]),"salary_lpa":round(random.uniform(s_min,s_max),1),"salary_avg_lpa":round(random.uniform(s_min,s_max),1),"skills":", ".join(random.sample(skills_pool,4)),"is_remote":int(city=="Remote"),"posted_date":(datetime.now()-timedelta(days=random.randint(0,90))).strftime("%Y-%m-%d")})
+        df = pd.DataFrame(records)
+        conn = sqlite3.connect(DB_PATH)
+        df.to_sql("jobs", conn, if_exists="replace", index=False)
+        conn.close()
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql("SELECT * FROM jobs", conn)
     conn.close()
