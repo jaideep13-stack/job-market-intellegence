@@ -161,8 +161,11 @@ CITIES = [
 def load_data() -> pd.DataFrame:
     """Load and preprocess jobs from SQLite."""
     if not DB_PATH.exists():
-        st.error("⚠️ Database not found. Please run `python scraper.py --synthetic` first.")
-        st.stop()
+    os.makedirs("data", exist_ok=True)
+    from scraper import generate_synthetic_jobs, save_to_db
+    df_temp = generate_synthetic_jobs(1500)
+    save_to_db(df_temp)
+      
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql("SELECT * FROM jobs", conn)
     conn.close()
