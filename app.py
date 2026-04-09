@@ -159,8 +159,8 @@ CITIES = [
 # ── Data loaders ──────────────────────────────────────────────────────────────
 @st.cache_data(ttl=300)
 def load_data() -> pd.DataFrame:
+    """Load and preprocess jobs from SQLite."""
     if not DB_PATH.exists():
-        os.makedirs("data", exist_ok=True)
         import random
         from datetime import datetime, timedelta
         records = []
@@ -173,11 +173,12 @@ def load_data() -> pd.DataFrame:
             role = random.choice(roles)
             city = random.choice(cities)
             s_min,s_max = salary_map[role]
-            records.append({"job_id":f"JOB{i}","title":role,"company":random.choice(companies),"city":city,"experience":random.choice(["0-1 years","1-3 years","3-5 years","5-8 years"]),"salary_lpa":round(random.uniform(s_min,s_max),1),"salary_avg_lpa":round(random.uniform(s_min,s_max),1),"skills":", ".join(random.sample(skills_pool,4)),"is_remote":int(city=="Remote"),"posted_date":(datetime.now()-timedelta(days=random.randint(0,90))).strftime("%Y-%m-%d")})
-        df = pd.DataFrame(records)
-        conn = sqlite3.connect(DB_PATH)
-        df.to_sql("jobs", conn, if_exists="replace", index=False)
-        conn.close()
+            records.append({"job_id":f"JOB{i}","title":role,"company":random.choice(companies),"city":city,"experience":random.choice(["0-1 years","1-3 years","3-5 years"]),"salary_lpa":round(random.uniform(s_min,s_max),1),"salary_avg_lpa":round(random.uniform(s_min,s_max),1),"skills":", ".join(random.sample(skills_pool,4)),"is_remote":int(city=="Remote"),"posted_date":(datetime.now()-timedelta(days=random.randint(0,90))).strftime("%Y-%m-%d")})
+        df2 = pd.DataFrame(records)
+        os.makedirs("data", exist_ok=True)
+        conn2 = sqlite3.connect(DB_PATH)
+        df2.to_sql("jobs", conn2, if_exists="replace", index=False)
+        conn2.close()  
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql("SELECT * FROM jobs", conn)
     conn.close()
@@ -258,8 +259,8 @@ with st.sidebar:
 
     page = st.radio(
         "Navigate",
-        ["📊 Market Overview", "🔍 Skills Analysis", "🏙️ City Insights",
-         "📈 Trends", "💰 Salary Predictor", "📋 Raw Data"],
+        [" Market Overview", " Skills Analysis", " City Insights",
+         " Trends", " Salary Predictor", "Raw Data"],
         label_visibility="collapsed",
     )
 
@@ -316,8 +317,8 @@ df = df[df["salary_avg_lpa"] <= salary_range[1]]
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE 1 — MARKET OVERVIEW
 # ══════════════════════════════════════════════════════════════════════════════
-if page == "📊 Market Overview":
-    st.markdown("# 📊 Indian Job Market Intelligence")
+if page == " Market Overview":
+    st.markdown("#  Indian Job Market Intelligence")
     st.markdown("<p style='color:#8899BB;margin-top:-12px'>Live analysis of 1,500+ AI/ML/Data job postings across India</p>", unsafe_allow_html=True)
 
     # KPI row
@@ -332,7 +333,7 @@ if page == "📊 Market Overview":
         [col1, col2, col3, col4, col5],
         [f"{total:,}", f"₹{avg_sal:.1f}", f"{remote_pct:.1f}%", top_city, top_role],
         ["Total Postings", "Avg Salary (LPA)", "Remote Jobs", "Top Hiring City", "Most In-Demand Role"],
-        ["📋", "💰", "🏠", "📍", "🎯"],
+        ["", "", "", "", ""],
     ):
         col.markdown(f"""
         <div class="metric-card">
@@ -347,7 +348,7 @@ if page == "📊 Market Overview":
     col_a, col_b = st.columns([1, 1.4])
 
     with col_a:
-        st.markdown('<div class="section-header">🎯 Jobs by Role</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Jobs by Role</div>', unsafe_allow_html=True)
         role_counts = df["title"].value_counts().reset_index()
         role_counts.columns = ["Role", "Count"]
         fig = px.bar(
@@ -360,7 +361,7 @@ if page == "📊 Market Overview":
         st.plotly_chart(fig, use_container_width=True)
 
     with col_b:
-        st.markdown('<div class="section-header">💰 Average Salary by Role (LPA)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Average Salary by Role (LPA)</div>', unsafe_allow_html=True)
         sal_role = (
             df[df["salary_avg_lpa"] > 0]
             .groupby("title")["salary_avg_lpa"]
@@ -379,24 +380,24 @@ if page == "📊 Market Overview":
         st.plotly_chart(fig2, use_container_width=True)
 
     # Insights
-    st.markdown('<div class="section-header">💡 Key Market Insights</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"> Key Market Insights</div>', unsafe_allow_html=True)
     ins_col1, ins_col2, ins_col3 = st.columns(3)
     top_paying = sal_role.sort_values("mean", ascending=False).iloc[0] if len(sal_role) else None
     with ins_col1:
         if top_paying is not None:
-            st.markdown(f'<div class="insight-box">🏆 <b>{top_paying["title"]}</b> is the highest-paying role at ₹{top_paying["mean"]:.1f} LPA average — {((top_paying["mean"] - avg_sal) / avg_sal * 100):.0f}% above market average.</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="insight-box"> <b>{top_paying["title"]}</b> is the highest-paying role at ₹{top_paying["mean"]:.1f} LPA average — {((top_paying["mean"] - avg_sal) / avg_sal * 100):.0f}% above market average.</div>', unsafe_allow_html=True)
     with ins_col2:
-        st.markdown(f'<div class="insight-box">🏠 <b>{remote_pct:.1f}%</b> of all postings offer remote or work-from-home options — a strong signal for distributed-first hiring in 2024.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"> <b>{remote_pct:.1f}%</b> of all postings offer remote or work-from-home options — a strong signal for distributed-first hiring in 2024.</div>', unsafe_allow_html=True)
     with ins_col3:
         fresher_jobs = len(df[df["experience"].isin(["0-1 years", "1-3 years"])])
-        st.markdown(f'<div class="insight-box">🌱 <b>{fresher_jobs:,}</b> postings ({fresher_jobs/total*100:.0f}%) are open to candidates with 0–3 years of experience — strong entry-level demand.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"> <b>{fresher_jobs:,}</b> postings ({fresher_jobs/total*100:.0f}%) are open to candidates with 0–3 years of experience — strong entry-level demand.</div>', unsafe_allow_html=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE 2 — SKILLS ANALYSIS
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "🔍 Skills Analysis":
-    st.markdown("# 🔍 Skills Intelligence")
+
+#  SKILLS ANALYSIS
+
+elif page == " Skills Analysis":
+    st.markdown("#  Skills Intelligence")
     st.markdown("<p style='color:#8899BB;margin-top:-12px'>Which skills are most demanded — and which command the highest salary?</p>", unsafe_allow_html=True)
 
     skill_df = get_skill_frequency(df)
@@ -404,7 +405,7 @@ elif page == "🔍 Skills Analysis":
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.markdown('<div class="section-header">📊 Most In-Demand Skills</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Most In-Demand Skills</div>', unsafe_allow_html=True)
         fig = px.bar(
             skill_df.head(20), x="count", y="skill", orientation="h",
             color="count", color_continuous_scale=["#1E3A5F", "#60A5FA", "#93C5FD"],
@@ -415,7 +416,7 @@ elif page == "🔍 Skills Analysis":
         st.plotly_chart(fig, use_container_width=True)
 
     with col_b:
-        st.markdown('<div class="section-header">💰 Salary Premium by Skill (%)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Salary Premium by Skill (%)</div>', unsafe_allow_html=True)
         premium = skill_df[skill_df["count"] >= 5].sort_values("salary_premium_pct", ascending=True).tail(20)
         colors = ["#34D399" if v > 0 else "#F87171" for v in premium["salary_premium_pct"]]
         fig2 = go.Figure(go.Bar(
@@ -453,8 +454,8 @@ elif page == "🔍 Skills Analysis":
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE 3 — CITY INSIGHTS
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "🏙️ City Insights":
-    st.markdown("# 🏙️ City-wise Market Analysis")
+elif page == " City Insights":
+    st.markdown("#  City-wise Market Analysis")
     st.markdown("<p style='color:#8899BB;margin-top:-12px'>Where should you target your job search?</p>", unsafe_allow_html=True)
 
     city_df = (
@@ -476,7 +477,7 @@ elif page == "🏙️ City Insights":
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.markdown('<div class="section-header">🏙️ Average Salary by City</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Average Salary by City</div>', unsafe_allow_html=True)
         fig = px.bar(
             city_df.head(12), x="city", y="avg_salary",
             color="avg_salary", color_continuous_scale=["#1E3A5F", "#A78BFA"],
@@ -488,7 +489,7 @@ elif page == "🏙️ City Insights":
         st.plotly_chart(fig, use_container_width=True)
 
     with col_b:
-        st.markdown('<div class="section-header">📊 Job Volume vs Salary</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Job Volume vs Salary</div>', unsafe_allow_html=True)
         fig2 = px.scatter(
             city_df, x="job_count", y="avg_salary",
             size="job_count", color="remote_pct",
@@ -502,7 +503,7 @@ elif page == "🏙️ City Insights":
         st.plotly_chart(fig2, use_container_width=True)
 
     # City x Role heatmap
-    st.markdown('<div class="section-header">🌡️ City × Role Salary Heatmap</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"> City × Role Salary Heatmap</div>', unsafe_allow_html=True)
     heatmap_data = (
         df[df["salary_avg_lpa"] > 0]
         .groupby(["city", "title"])["salary_avg_lpa"]
@@ -523,14 +524,14 @@ elif page == "🏙️ City Insights":
 
     best_city = city_df.iloc[0] if len(city_df) > 0 else None
     if best_city is not None:
-        st.markdown(f'<div class="insight-box">🏆 <b>{best_city["city"]}</b> offers the highest average salary at ₹{best_city["avg_salary"]} LPA with {best_city["job_count"]} active postings. Remote work constitutes {best_city["remote_pct"]}% of its listings.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="insight-box"> <b>{best_city["city"]}</b> offers the highest average salary at ₹{best_city["avg_salary"]} LPA with {best_city["job_count"]} active postings. Remote work constitutes {best_city["remote_pct"]}% of its listings.</div>', unsafe_allow_html=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE 4 — TRENDS
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "📈 Trends":
-    st.markdown("# 📈 Market Trends")
+elif page == " Trends":
+    st.markdown("#  Market Trends")
     st.markdown("<p style='color:#8899BB;margin-top:-12px'>How is hiring volume and salary evolving over time?</p>", unsafe_allow_html=True)
 
     # Monthly trend
@@ -546,7 +547,7 @@ elif page == "📈 Trends":
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.markdown('<div class="section-header">📅 Monthly Posting Volume</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Monthly Posting Volume</div>', unsafe_allow_html=True)
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=monthly["month"], y=monthly["postings"],
@@ -560,7 +561,7 @@ elif page == "📈 Trends":
         st.plotly_chart(fig, use_container_width=True)
 
     with col_b:
-        st.markdown('<div class="section-header">💰 Average Salary Trend (LPA)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"> Average Salary Trend (LPA)</div>', unsafe_allow_html=True)
         fig2 = go.Figure()
         fig2.add_trace(go.Scatter(
             x=monthly["month"], y=monthly["avg_salary"].round(2),
@@ -573,7 +574,7 @@ elif page == "📈 Trends":
         st.plotly_chart(fig2, use_container_width=True)
 
     # Experience vs salary
-    st.markdown('<div class="section-header">📊 Experience Level Impact on Salary</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header"> Experience Level Impact on Salary</div>', unsafe_allow_html=True)
     exp_df = (
         df[df["salary_avg_lpa"] > 0]
         .groupby("experience")["salary_avg_lpa"]
@@ -605,17 +606,16 @@ elif page == "📈 Trends":
     st.plotly_chart(fig4, use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE 5 — SALARY PREDICTOR
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "💰 Salary Predictor":
-    st.markdown("# 💰 AI Salary Predictor")
+
+# SALARY PREDICTOR# ══════════════════════════════════════════════════════════════════════════════
+elif page == " Salary Predictor":
+    st.markdown("#  AI Salary Predictor")
     st.markdown("<p style='color:#8899BB;margin-top:-12px'>Enter your profile and get a market salary estimate powered by Random Forest ML</p>", unsafe_allow_html=True)
 
     payload, metrics = load_model()
 
     if payload is None:
-        st.warning("⚠️ Model not trained yet. Run `python model.py` to train the salary predictor.")
+        st.warning(" Model not trained yet. Run `python model.py` to train the salary predictor.")
         st.info("The model uses Random Forest with 200 estimators, trained on 1,500+ job postings with features including role, city, experience, and skills.")
     else:
         col_form, col_result = st.columns([1, 1.2])
@@ -632,7 +632,7 @@ elif page == "💰 Salary Predictor":
             )
             is_remote = st.checkbox("Applying for Remote Roles")
 
-            predict_btn = st.button("🔮 Predict My Salary", use_container_width=True)
+            predict_btn = st.button(" Predict My Salary", use_container_width=True)
 
         with col_result:
             if predict_btn and payload:
@@ -673,7 +673,7 @@ elif page == "💰 Salary Predictor":
             else:
                 # Model card
                 if metrics:
-                    st.markdown("### 🤖 Model Performance Card")
+                    st.markdown("###  Model Performance Card")
                     st.markdown(f"""
                     <div class="metric-card" style="text-align:left;padding:24px">
                         <div style="color:#60A5FA;font-weight:700;margin-bottom:12px">{metrics.get('model_name','Random Forest')}</div>
@@ -690,11 +690,11 @@ elif page == "💰 Salary Predictor":
                 st.info("👈 Fill in your profile and click **Predict My Salary** to get your market estimate.")
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE 6 — RAW DATA
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "📋 Raw Data":
-    st.markdown("# 📋 Raw Dataset")
+
+#  RAW DATA
+
+elif page == " Raw Data":
+    st.markdown("#  Raw Dataset")
     st.markdown(f"<p style='color:#8899BB;margin-top:-12px'>{len(df):,} job postings (filtered)</p>", unsafe_allow_html=True)
 
     col_s, col_dl = st.columns([4, 1])
@@ -702,7 +702,7 @@ elif page == "📋 Raw Data":
         search = st.text_input("🔍 Search", placeholder="Search company, role, city...")
     with col_dl:
         st.download_button(
-            "⬇️ Download CSV",
+            "⬇ Download CSV",
             data=df.to_csv(index=False).encode(),
             file_name="job_market_data.csv",
             mime="text/csv",
